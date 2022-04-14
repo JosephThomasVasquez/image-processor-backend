@@ -3,6 +3,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const errorHandler = require("./errors/errorHandler");
 const notFound = require("./errors/notFound");
+const imageProcessorRouter = require("./imageProcessor/imageProcessor.router");
 
 const app = express();
 
@@ -16,6 +17,8 @@ app.use(
   })
 );
 app.use(express.json());
+
+app.use("/", imageProcessorRouter);
 
 // error handler
 app.use(errorHandler);
