@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
 const Jimp = require("jimp");
-const { MIME_JPEG } = require("jimp");
+const { MIME_JPEG, MIME_PNG, MIME_GIF } = require("jimp");
 
 const hasData = (req, res, next) => {
   const { data = {} } = req.body;
@@ -21,11 +21,9 @@ const hasData = (req, res, next) => {
 const resizeImage = async (req, res, next) => {
   console.log(req.body);
   const fileURL = req.body.data.url;
-  //   const fileURL =
-  //     "https://images.unsplash.com/photo-1649565023079-56bac30e38ad?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2274&q=80";
 
-  const filePath = path.normalize(__dirname + "/public/assets/");
-  console.log("filePath:", filePath);
+  //   const filePath = path.normalize(__dirname + "/public/assets/");
+  //   console.log("filePath:", filePath);
 
   //   console.log(res.locals.image);
 
@@ -45,11 +43,16 @@ const resizeImage = async (req, res, next) => {
 
     let resizeProcess = image
       .resize(Number(req.body.data.Width), Jimp.AUTO)
-      .quality(20);
+      .quality(1);
 
     //   Process Brightness
     if (req.body.data.brightness) {
       resizeProcess = resizeProcess.brightness(req.body.data.brightness * 0.01);
+    }
+
+    //   Process Contrast
+    if (req.body.data.contrast) {
+      resizeProcess = resizeProcess.contrast(req.body.data.contrast * 0.01);
     }
 
     //   Process Grayscale
@@ -57,9 +60,20 @@ const resizeImage = async (req, res, next) => {
       resizeProcess = resizeProcess.greyscale();
     }
 
-    resizeProcess.getBase64Async(MIME_JPEG).then((newImage) => {
-      res.json({ data: newImage });
-    });
+    //   Process Grayscale
+    if (req.body.data.inverted) {
+      resizeProcess = resizeProcess.invert();
+    }
+
+    //   Send processed image preview
+
+    const formats = { jpeg: MIME_JPEG, gif: MIME_GIF, png: MIME_PNG };
+
+    resizeProcess
+      .getBase64Async(formats[req.body.data.format])
+      .then((newImage) => {
+        res.json({ data: newImage });
+      });
     // image
     //   .resize(256, 256)
     //   .quality(60)
