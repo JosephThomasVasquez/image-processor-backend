@@ -30,7 +30,7 @@ const resizeImage = async (req, res, next) => {
   //   console.log(res.locals.image);
 
   let count = 1;
-  let newFile = `${filePath}lenna-${count}.jpg`;
+  //   let newFile = `${filePath}lenna-${count}.jpg`;
 
   // Resize the image
   const resizedImage = Jimp.read(fileURL, (error, image) => {
@@ -41,18 +41,25 @@ const resizeImage = async (req, res, next) => {
       });
     }
 
-    image
-      .resize(512, Jimp.AUTO)
-      .quality(60)
-      .greyscale()
-      .getBase64Async(MIME_JPEG)
-      .then((newImage) => {
-        console.log("newImage", newImage);
-        //   let tag = document.createElement("img");
-        //   tag.src = newImage;
-        //   document.getElementById("img-container").append(tag);
-        res.json({ data: newImage });
-      });
+    let processedImage = null;
+
+    let resizeProcess = image
+      .resize(Number(req.body.data.Width), Jimp.AUTO)
+      .quality(20);
+
+    //   Process Brightness
+    if (req.body.data.brightness) {
+      resizeProcess = resizeProcess.brightness(req.body.data.brightness * 0.01);
+    }
+
+    //   Process Grayscale
+    if (req.body.data.grayscale) {
+      resizeProcess = resizeProcess.greyscale();
+    }
+
+    resizeProcess.getBase64Async(MIME_JPEG).then((newImage) => {
+      res.json({ data: newImage });
+    });
     // image
     //   .resize(256, 256)
     //   .quality(60)
@@ -62,5 +69,5 @@ const resizeImage = async (req, res, next) => {
 };
 
 module.exports = {
-  resize: resizeImage,
+  resize: asyncErrorBoundary(resizeImage),
 };
