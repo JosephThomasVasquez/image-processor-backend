@@ -10,11 +10,25 @@ const hasData = (req, res, next) => {
   if (!data) {
     return next({
       status: 400,
-      message: `Please choose a valid image file.`,
+      message: `No data found.`,
     });
   }
 
   res.locals.image = data;
+  next();
+};
+
+const hasImage = (req, res, next) => {
+  const { url = "" } = req.body.data;
+
+  if (!url) {
+    return next({
+      status: 400,
+      message: `Please choose a valid image file.`,
+    });
+  }
+
+  res.locals.image = req.body.data;
   next();
 };
 
@@ -41,9 +55,12 @@ const resizeImage = async (req, res, next) => {
 
     let processedImage = null;
 
-    let resizeProcess = image
-      .resize(Number(req.body.data.Width), Jimp.AUTO)
-      .quality(1);
+    let resizeProcess = image.resize(Number(req.body.data.Width), Jimp.AUTO);
+
+    //   Process Quality
+    if (req.body.data.quality) {
+      resizeProcess = resizeProcess.quality(req.body.data.quality);
+    }
 
     //   Process Brightness
     if (req.body.data.brightness) {
@@ -83,5 +100,9 @@ const resizeImage = async (req, res, next) => {
 };
 
 module.exports = {
-  resize: asyncErrorBoundary(resizeImage),
+  resize: [
+    asyncErrorBoundary(hasData),
+    asyncErrorBoundary(hasImage),
+    asyncErrorBoundary(resizeImage),
+  ],
 };
